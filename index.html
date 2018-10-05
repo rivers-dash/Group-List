@@ -2,54 +2,64 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>Socket.io</title>
+        <title>Group List !</title>
+        <style>
+            #zone_chat strong {
+                color: white;
+                background-color: black;
+                padding: 2px;
+            }
+        </style>
     </head>
 
     <body>
-        <h1>Communication avec socket.io !</h1>
+        <h1>Group List</h1>
 
-				<form action="/" method="post" id="formulaire_chat">
-            <input type="text" name="message" id="message" placeholder="Votre message..." size="50" autofocus />
-            <input type="submit" id="envoi_message" value="Envoyer" />
+        <form action="/" method="post" id="formulaire_chat">
+            <input type="text" name="item" id="item" placeholder="Nouvelle tâche ..." size="50" autofocus />
+            <input type="submit" id="envoi_item" value="Envoyer" />
         </form>
 
-        <p><input type="button" value="Embêter le serveur" id="poke" /></p>
+				<ul id="tasks">
+				</ul>
 
-				<section id="zone_chat"></section>
 
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script>
+
+            // Connexion à socket.io
             var socket = io.connect('http://localhost:8080');
-            socket.on('clientConnected', function() {
-								var pseudo = prompt('Quel est votre pseudo ?');
-								socket.emit('pseudo', pseudo);
+
+            // On demande le user, on l'envoie au serveur et on l'affiche dans le titre
+            var user = prompt('Quel est votre pseudo ?');
+            socket.emit('newUser', user);
+            document.title = user + ' - ' + document.title;
+
+						socket.on('list', function(list) {
+                list.forEach(function(item) {
+									refreshList(item.user, item.item)
+								})
+            })
+
+            // Quand on reçoit un item, on l'insère dans la page
+            socket.on('item', function(data) {
+                refreshList(data.user, data.item)
+            })
+
+            // Lorsqu'on envoie le formulaire, on transmet le item et on l'affiche sur la page
+            $('#formulaire_chat').submit(function () {
+                var item = $('#item').val();
+                socket.emit('item', item); // Transmet le item aux autres
+                refreshList(user, item); // Affiche le item aussi sur notre page
+                $('#item').val('').focus(); // Vide la zone de Chat et remet le focus dessus
+                return false; // Permet de bloquer l'envoi "classique" du formulaire
             });
 
-						socket.on('newUser', function(data) {
-								insereMessage(data.user, data.message);
-						});
-
-						socket.on('newMessage', function(data) {
-							insereMessage(data.author, data.message);
-						});
-
-						// Lorsqu'on envoie le formulaire, on transmet le message et on l'affiche sur la page
-					 $('#formulaire_chat').submit(function () {
-							 var message = $('#message').val();
-							 socket.emit('message', message); // Transmet le message aux autres
-							 insereMessage(pseudo, message);
-							 $('#message').val('').focus(); // Vide la zone de Chat et remet le focus dessus
-							 return false; // Permet de bloquer l'envoi "classique" du formulaire
-					 });
-
-					 function insereMessage(pseudo, message) {
-                $('#zone_chat').prepend('<p><strong>' + pseudo + '</strong> ' + message + '</p>');
+            // Ajoute un item dans la page
+            function refreshList(user, item) {
+                $('#tasks').prepend('<li> ❌ <strong>' + user + ' : </strong> ' + item + '</li>');
             }
-
-            $('#poke').click(function () {
-                socket.emit('message', 'Salut serveur, ça va ?');
-            });
         </script>
     </body>
 </html>

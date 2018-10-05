@@ -1,43 +1,32 @@
-var http = require('http');
-var fs = require('fs');
+var app = require('express')(),
+    server = require('http').createServer(app),
+    io = require('socket.io').listen(server),
+    ent = require('ent'), // Permet de bloquer les caractères HTML (sécurité équivalente à htmlentities en PHP)
+    fs = require('fs');
 
-// Chargement du fichier index.html affiché au client
-var server = http.createServer(function(req, res) {
-    fs.readFile('./index.html', 'utf-8', function(error, content) {
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.end(content);
+let list = []
+
+// Chargement de la page index.html
+app.get('/', function (req, res) {
+  res.sendfile(__dirname + '/index.html');
+});
+
+io.sockets.on('connection', function (socket, user) {
+    // Dès qu'on nous donne un user, on le stocke en variable de session et on informe les autres personnes
+    socket.on('newUser', function(user) {
+        user = ent.encode(user);
+        socket.user = user;
+        socket.broadcast.emit('newUser', user);
+				socket.emit('list', list);
+    });
+
+    // Dès qu'on reçoit un item, on récupère le pseudo de son auteur et on le transmet aux autres personnes
+    socket.on('item', function (item) {
+        item = ent.encode(item);
+				let data = { item: item, user: socket.user };
+				list.push(data)
+        socket.broadcast.emit('item', data);
     });
 });
-
-// Chargement de socket.io
-var io = require('socket.io').listen(server);
-
-// Quand un client se connecte, on le note dans la console
-io.sockets.on('connection', function (socket) {
-		socket.emit('clientConnected');
-
-		// Quand un petit nouveau envoie son pseudo
-		socket.on('pseudo', function(pseudo) {
-			socket.pseudo = pseudo;
-			if (socket.pseudo) {
-				let data = {
-					user: socket.pseudo,
-					message: ' viens de rejoindre la conversation '
-				}
-				socket.broadcast.emit('newUser', data);
-			}
-			console.log(socket.pseudo + ' viens de rejoindre la conversation ');
-			 socket.on('message', function(message) {
-				 console.log('Sombody is trying to send a message !')
-				 let data = {
-					 message: message,
-					 author: socket.pseudo,
-				 }
-				 socket.broadcast.emit('newMessage', data);
-			 })
-
-		});
-});
-
 
 server.listen(8080);
