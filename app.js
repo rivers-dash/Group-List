@@ -12,11 +12,7 @@ app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/todo/supprimer', function(req, res) {
-    if (req.params.index != '') {
-			console.log(req.params.index)
-        list.splice(req.params.index, 1);
-    }
+app.use(function(req, res){
     res.redirect('/');
 })
 
@@ -35,8 +31,17 @@ io.sockets.on('connection', function (socket, user) {
 				let data = { item: item, user: socket.user, index: index++ };
 				list.push(data)
         socket.broadcast.emit('item', data);
-				console.log(data)
     });
+
+		// Dès qu'on reçoit un delete, on supprime l'element de la liste
+		socket.on('delete', function (index) {
+				index = parseInt(index)
+					list.forEach(function(item) {
+						if (item.index === index)
+							list.splice(list.indexOf(item), 1);
+					});
+				socket.broadcast.emit('delete', index);
+		});
 });
 
 server.listen(8080);

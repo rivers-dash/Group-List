@@ -20,8 +20,8 @@
             <input type="submit" id="envoi_item" value="Envoyer" />
         </form>
 
-				<ul id="tasks">
-				</ul>
+				<div id="tasks">
+				</div>
 
 
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
@@ -31,20 +31,34 @@
             // Connexion à socket.io
             var socket = io.connect('http://localhost:8080');
 
-            // On demande le user, on l'envoie au serveur et on l'affiche dans le titre
-            var user = prompt('Quel est votre pseudo ?');
+            // On exige le user, on l'envoie au serveur et on l'affiche dans le titre
+            var user
+						while (!user) {
+							user = prompt('Quel est votre pseudo ?');
+						}
+
 						var index = 0
+						var list = []
+
+						// On emet l'evenement new user et on met le pseudo sur le title de page
             socket.emit('newUser', user);
             document.title = user + ' - ' + document.title;
 
-						socket.on('list', function(list) {
+						// Si une nouvelle liste suite à un new user on affiche les item au nouvel user
+						socket.on('list', function(updateList) {
+								list = updateList
                 list.forEach(function(item) {
 									refreshList(item.user, item.item, item.index)
 								})
 								if (list.length){
-									index = list[list.length - 1].index + 1
+									index = list[list.length - 1].index
 								}
             })
+
+						// Si supression d'un item on le retire de la liste grace à son index
+						socket.on('delete', function(index) {
+								$('#'+index).remove();
+						})
 
             // Quand on reçoit un item, on l'insère dans la page
             socket.on('item', function(data) {
@@ -63,12 +77,14 @@
 
             // Ajoute un item dans la page
             function refreshList(user, item, index) {
-							let temp = '<li> <span> ❌ </span>' + item + '</li>';
+							let temp = '<div id="' + index + '"> <span> ❌ </span>' + item + '</div>';
                 $('#tasks').prepend(temp);
             }
 
+						// Si suppression d'un task on lance l'événement delete et on le suprimme de la liste actuelle
 						$('#tasks').on('dblclick','span', function(){
-							 $(this.parentNode).toggleClass('strike').fadeOut('slow');
+							 $(this.parentNode).remove();
+							 socket.emit('delete', this.parentNode.id)
 						 });
 
         </script>
