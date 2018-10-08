@@ -5,11 +5,20 @@ var app = require('express')(),
     fs = require('fs');
 
 let list = []
+let index = 0
 
 // Chargement de la page index.html
 app.get('/', function (req, res) {
-  res.sendfile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/index.html');
 });
+
+app.get('/todo/supprimer', function(req, res) {
+    if (req.params.index != '') {
+			console.log(req.params.index)
+        list.splice(req.params.index, 1);
+    }
+    res.redirect('/');
+})
 
 io.sockets.on('connection', function (socket, user) {
     // Dès qu'on nous donne un user, on le stocke en variable de session et on informe les autres personnes
@@ -23,9 +32,10 @@ io.sockets.on('connection', function (socket, user) {
     // Dès qu'on reçoit un item, on récupère le pseudo de son auteur et on le transmet aux autres personnes
     socket.on('item', function (item) {
         item = ent.encode(item);
-				let data = { item: item, user: socket.user };
+				let data = { item: item, user: socket.user, index: index++ };
 				list.push(data)
         socket.broadcast.emit('item', data);
+				console.log(data)
     });
 });
 

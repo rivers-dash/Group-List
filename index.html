@@ -33,33 +33,44 @@
 
             // On demande le user, on l'envoie au serveur et on l'affiche dans le titre
             var user = prompt('Quel est votre pseudo ?');
+						var index = 0
             socket.emit('newUser', user);
             document.title = user + ' - ' + document.title;
 
 						socket.on('list', function(list) {
                 list.forEach(function(item) {
-									refreshList(item.user, item.item)
+									refreshList(item.user, item.item, item.index)
 								})
+								if (list.length){
+									index = list[list.length - 1].index + 1
+								}
             })
 
             // Quand on reçoit un item, on l'insère dans la page
             socket.on('item', function(data) {
-                refreshList(data.user, data.item)
+								index = data.index + 1
+                refreshList(data.user, data.item, data.index)
             })
 
             // Lorsqu'on envoie le formulaire, on transmet le item et on l'affiche sur la page
             $('#formulaire_chat').submit(function () {
                 var item = $('#item').val();
                 socket.emit('item', item); // Transmet le item aux autres
-                refreshList(user, item); // Affiche le item aussi sur notre page
+                refreshList(user, item, index++); // Affiche le item aussi sur notre page
                 $('#item').val('').focus(); // Vide la zone de Chat et remet le focus dessus
                 return false; // Permet de bloquer l'envoi "classique" du formulaire
             });
 
             // Ajoute un item dans la page
-            function refreshList(user, item) {
-                $('#tasks').prepend('<li> ❌ <strong>' + user + ' : </strong> ' + item + '</li>');
+            function refreshList(user, item, index) {
+							let temp = '<li> <span> ❌ </span>' + item + '</li>';
+                $('#tasks').prepend(temp);
             }
+
+						$('#tasks').on('dblclick','span', function(){
+							 $(this.parentNode).toggleClass('strike').fadeOut('slow');
+						 });
+
         </script>
     </body>
 </html>
