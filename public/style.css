@@ -1,0 +1,57 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,400);
+
+body {
+font: normal normal 13px/16px "Open Sans", sans-serif;
+background: #dfdfdf;
+}
+
+.container {
+padding: 20px;
+width: 500px;
+margin: 0 auto;
+margin-top: 40px;
+background: white;
+border-radius: 5px;}
+
+form {
+display: inline-block;
+}
+
+#itemInput {
+padding: 4px 15px 4px 5px;
+}
+
+#addButton {
+display: inline-block;
+background-color: #1f153c;
+color:#ffffff;
+border-radius: 5px;
+text-align:center;
+margin-top:2px;
+padding: 5px 15px;
+}
+
+#button:hover{
+cursor: pointer;
+opacity: .8;}
+
+.item {
+	padding: 5px 0px 5px 20px;
+
+}
+
+.item #tasks {
+	padding: 5px;color:#000;
+}
+
+.item #tasks:nth-child(even) {
+	background: #dfdfdf;
+}
+
+#tasks {
+	padding-top: 10px;
+}
+
+#tasks:hover {
+  cursor: pointer;
+}

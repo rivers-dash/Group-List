@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+				<link rel="stylesheet" type="text/css" href="./style.css"/>
+
+        <title>Group List</title>
+    </head>
+
+    <body>
+			<div class="container">
+
+        <h2>Group List</h2>
+				<p><em>Click add to add items, double click the red cross to delete an item off.</em><p>
+
+	        <form action="/" method="post" id="formulaire_chat">
+	            <input type="text" name="item" id="itemInput" placeholder="Nouvelle tâche ..." size="50" autofocus />
+	            <input type="submit" id="addButton" value="Add" />
+	        </form>
+
+					<div id="tasks">
+					</div>
+			</div>
+
+				<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+				<script>
+				// Connexion à socket.io
+				var socket = io.connect('http://localhost:8080');
+
+				// On exige le user, on l'envoie au serveur et on l'affiche dans le titre
+				var user
+				while (!user) {
+					user = prompt('Quel est votre pseudo ?');
+				}
+
+				var index = 0
+				var list = []
+
+				// On emet l'evenement new user et on met le pseudo sur le title de page
+				socket.emit('newUser', user);
+				document.title = user + ' - ' + document.title;
+
+				// Si une nouvelle liste suite à un new user on affiche les item au nouvel user
+				socket.on('list', function(updateList) {
+						list = updateList
+				    list.forEach(function(item) {
+							refreshList(item.user, item.item, item.index)
+						})
+						if (list.length){
+							index = list[list.length - 1].index
+						}
+				})
+
+				// Si supression d'un item on le retire de la liste grace à son index
+				socket.on('delete', function(index) {
+						$('#'+index).fadeOut(300,function() { $(this).remove();});
+				})
+
+				// Quand on reçoit un item, on l'insère dans la page
+				socket.on('item', function(data) {
+						index = data.index + 1
+				    refreshList(data.user, data.item, data.index)
+				})
+
+				// Lorsqu'on envoie le formulaire, on transmet le item et on l'affiche sur la page
+				$('#formulaire_chat').submit(function () {
+				    var item = $('#itemInput').val();
+				    socket.emit('item', item); // Transmet le item aux autres
+				    refreshList(user, item, index++); // Affiche le item aussi sur notre page
+				    $('#itemInput').val('').focus(); // Vide la zone de Chat et remet le focus dessus
+				    return false; // Permet de bloquer l'envoi "classique" du formulaire
+				});
+
+				// Ajoute un item dans la page
+				function refreshList(user, item, index) {
+					let temp = '<div class="item" id="' + index + '"> <span> ❌ </span>' + item + '</div>';
+				    $('#tasks').prepend(temp);
+
+				}
+
+				// Si suppression d'un task on lance l'événement delete et on le suprimme de la liste actuelle
+				$('#tasks').on('dblclick','span', function(){
+					 $(this.parentNode).fadeOut(300,function() { $(this).remove();});
+					 socket.emit('delete', this.parentNode.id)
+				 });
+
+				</script>
+
+    </body>
+</html>

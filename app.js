@@ -1,4 +1,6 @@
-var app = require('express')(),
+const express = require('express')
+// var app = require('express')(),
+const app = express()
     server = require('http').createServer(app),
     io = require('socket.io').listen(server),
     ent = require('ent'), // Permet de bloquer les caractères HTML (sécurité équivalente à htmlentities en PHP)
@@ -6,6 +8,8 @@ var app = require('express')(),
 
 let list = []
 let index = 0
+
+app.use(express.static('public'));
 
 // Chargement de la page index.html
 app.get('/', function (req, res) {
